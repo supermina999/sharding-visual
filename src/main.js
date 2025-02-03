@@ -1,5 +1,3 @@
-import './style.css'
-
 import * as THREE from 'three';
 import * as TWEEN from 'three/addons/libs/tween.module.js'
 import {OrbitControls} from "three/addons";

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tensor Sharding</title>
+  </head>
+  <body>
+    <canvas id="bg"></canvas>
+    <script type="module" src="/src/main.js"></script>
+    <table style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: white">
+      <tbody>
+      <tr>
+        <td>
+          Tensor shape:
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="3" id="shape_0" />
+        </td>
+        <td>
+          x
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="4" id="shape_1" />
+        </td>
+        <td>
+          x
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="5" id="shape_2" />
+        </td>
+      </tr>
+      </tbody>
+      <tr>
+        <td>
+          Shard shape:
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="3" id="shard_0" />
+        </td>
+        <td>
+          x
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="1" id="shard_1" />
+        </td>
+        <td>
+          x
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="1" id="shard_2" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Core grid:
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="2" id="core_grid_0" />
+        </td>
+        <td>
+          x
+        </td>
+        <td>
+          <input type="number" min="1" max="10" step="1" value="3" id="core_grid_1" />
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <input type="button" value="Reset" id="reset_button" />
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

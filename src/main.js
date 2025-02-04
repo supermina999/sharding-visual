@@ -262,6 +262,10 @@ function setPaused(paused) {
         is_paused = true;
     } else {
         document.getElementById('pause_button').value = "Pause";
+        if (pending_animations !== 0 && animating_shard >= 0) {
+            pending_animations = 0;
+            animating_shard -= 1;
+        }
         is_paused = false;
     }
 }

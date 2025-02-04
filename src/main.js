@@ -143,33 +143,34 @@ function createCubes() {
         for (let idy = 0; idy < paddedShape[1]; idy++) {
             cubes[idx].push([]);
             for (let idz = 0; idz < paddedShape[2]; idz++) {
-                const material = new THREE.MeshLambertMaterial({color: 0x0000ff, transparent: true, opacity: 0.95});
-                if(idx >= tensorShape[0] || idy >= tensorShape[1] || idz >= tensorShape[2]) {
-                    material.opacity = 0.0;
-                }
-                const cube = new THREE.Mesh(boxGeometry, material);
                 const pos = getCubePosition(paddedShape, idx, idy, idz);
-                cube.position.set(pos.x, pos.y, pos.z);
-                scene.add(cube);
-                const geo = new THREE.EdgesGeometry(boxGeometry);
-                const mat = new THREE.LineBasicMaterial({color: 0x000000});
-                if(idx >= tensorShape[0] || idy >= tensorShape[1] || idz >= tensorShape[2]) {
-                    mat.transparent = true;
-                    mat.opacity = 0.2;
+                if(idx < tensorShape[0] && idy < tensorShape[1] && idz < tensorShape[2]) {
+                    const material = new THREE.MeshLambertMaterial({color: 0x0000ff, transparent: true, opacity: 0.95});
+                    const cube = new THREE.Mesh(boxGeometry, material);
+                    cube.position.set(pos.x, pos.y, pos.z);
+                    scene.add(cube);
+                    const geo = new THREE.EdgesGeometry(boxGeometry);
+                    const mat = new THREE.LineBasicMaterial({color: 0x000000});
+                    const wireframe = new THREE.LineSegments(geo, mat);
+                    cube.add(wireframe);
+                    cubes[idx][idy].push(cube);
+                } else {
+                    const geo = new THREE.EdgesGeometry(boxGeometry);
+                    const mat = new THREE.LineBasicMaterial({color: 0x000000, transparent: true, opacity: 0.2});
+                    const wireframe = new THREE.LineSegments(geo, mat);
+                    wireframe.position.set(pos.x, pos.y, pos.z);
+                    scene.add(wireframe);
+                    cubes[idx][idy].push(wireframe);
                 }
-                const wireframe = new THREE.LineSegments(geo, mat);
-                cube.add(wireframe);
-                cubes[idx][idy].push(cube);
             }
         }
     }
 }
 
 function colorShardedCubes() {
-    const paddedShape = getPaddedTensorShape();
-    for (let idx = 0; idx < paddedShape[0]; idx++) {
-        for (let idy = 0; idy < paddedShape[1]; idy++) {
-            for (let idz = 0; idz < paddedShape[2]; idz++) {
+    for (let idx = 0; idx < tensorShape[0]; idx++) {
+        for (let idy = 0; idy < tensorShape[1]; idy++) {
+            for (let idz = 0; idz < tensorShape[2]; idz++) {
                 const shardId = getShardIdx(idx, idy, idz);
                 const cube = cubes[idx][idy][idz];
                 cube.material.color.set(colors[shardId % colors.length]);

@@ -3,7 +3,7 @@ import * as TWEEN from 'three/addons/libs/tween.module.js'
 import {OrbitControls} from "three/addons";
 
 let tensorShape = [5, 4, 3];
-let shardShape = [1, 1, 3];
+let shardShape = [2, 2, 2];
 let coreGrid = [2, 3];
 let scene;
 let is_paused = false;

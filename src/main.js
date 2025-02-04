@@ -6,6 +6,10 @@ let tensorShape = [5, 4, 3];
 let shardShape = [1, 1, 3];
 let coreGrid = [2, 3];
 let scene;
+let is_paused = false;
+let pending_animations = 0;
+let animating_shard = -1;
+let cubes = [];
 
 const colors = [
     "#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF", "#FFA500", "#800080", "#008000", "#800000",
@@ -20,6 +24,14 @@ const colors = [
     "#FFE4E1", "#FFE4B5", "#FFDEAD", "#000080", "#FDF5E6", "#808080", "#6A5ACD", "#7CFC00", "#FFFACD", "#ADD8E6",
     "#F08080", "#E0FFFF", "#FAFAD2", "#D3D3D3", "#90EE90", "#FFB6C1", "#FFA07A", "#20B2AA", "#87CEFA", "#778899"
 ];
+
+function getNumShards(tensorShape, shardShape) {
+    let result = 1;
+    for (let i = 0; i < tensorShape.length; i++) {
+        result *= Math.ceil(tensorShape[i] / shardShape[i]);
+    }
+    return result;
+}
 
 function shardShapeTo2D(shardShape) {
     let volume = 1;
@@ -151,31 +163,60 @@ function colorShardedCubes(cubes, tensorShape, shardShape) {
 }
 
 const animationDuration = 1000;
-function animateCubes(cubes, tensorShape, shardShape, coreGrid) {
+function animateCubes(cubes, tensorShape, shardShape, coreGrid, shardId) {
     for (let idx = 0; idx < tensorShape[0]; idx++) {
         for (let idy = 0; idy < tensorShape[1]; idy++) {
             for (let idz = 0; idz < tensorShape[2]; idz++) {
-                const shardId = getShardIdx(tensorShape, shardShape, idx, idy, idz);
+                const curShardId = getShardIdx(tensorShape, shardShape, idx, idy, idz);
+                if(shardId !== curShardId) {
+                    continue;
+                }
                 const coreCoord = shardIdToCore(shardId, coreGrid);
                 const shardCoord = cubeToShardCoord(tensorShape, [idx, idy, idz], shardShape);
                 const finalPos = getFinalPosition(tensorShape, coreGrid, shardShape, coreCoord, shardCoord, shardId);
+                pending_animations += 1;
                 new TWEEN.Tween(cubes[idx][idy][idz].position)
                     .to(finalPos, animationDuration)
-                    .delay(animationDuration * shardId)
+                    .onComplete(() => {
+                        pending_animations -= 1;
+                    })
                     .start();
             }
         }
     }
 }
 
+function resetPositions(cubes, tensorShape, shardShape, coreGrid, shardId) {
+    for (let idx = 0; idx < tensorShape[0]; idx++) {
+        for (let idy = 0; idy < tensorShape[1]; idy++) {
+            for (let idz = 0; idz < tensorShape[2]; idz++) {
+                const cube = cubes[idx][idy][idz];
+                const curShardId = getShardIdx(tensorShape, shardShape, idx, idy, idz);
+                if (curShardId <= shardId) {
+                    const coreCoord = shardIdToCore(curShardId, coreGrid);
+                    const shardCoord = cubeToShardCoord(tensorShape, [idx, idy, idz], shardShape);
+                    const finalPos = getFinalPosition(tensorShape, coreGrid, shardShape, coreCoord, shardCoord, curShardId);
+                    cube.position.set(finalPos.x, finalPos.y, finalPos.z);
+                } else {
+                    const cubePos = getCubePosition(tensorShape, idx, idy, idz);
+                    cube.position.set(cubePos.x, cubePos.y, cubePos.z);
+                }
+            }
+        }
+    }
+    pending_animations = 0;
+}
+
 function initScene() {
     scene = new THREE.Scene();
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.5);
     scene.add(ambientLight);
-    const cubes = createCubes(scene, tensorShape);
+    cubes = createCubes(scene, tensorShape);
     colorShardedCubes(cubes, tensorShape, shardShape);
     createCoreGrid(scene, tensorShape, coreGrid[0], coreGrid[1]);
-    animateCubes(cubes, tensorShape, shardShape, coreGrid);
+    TWEEN.removeAll();
+    animating_shard = -1;
+    pending_animations = 0;
 }
 
 function reloadParams() {
@@ -191,6 +232,20 @@ function reloadParams() {
     shardShape = [shard_2, shard_1, shard_0];
     coreGrid = [core_grid_0, core_grid_1];
     initScene();
+}
+
+function setPaused(paused) {
+    if (paused === is_paused) {
+        return;
+    }
+    if (paused) {
+        document.getElementById('pause_button').value = "Play";
+        TWEEN.removeAll();
+        is_paused = true;
+    } else {
+        document.getElementById('pause_button').value = "Pause";
+        is_paused = false;
+    }
 }
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
@@ -210,6 +265,12 @@ initScene();
 
 function renderLoop() {
     requestAnimationFrame(renderLoop);
+
+    if (!is_paused && pending_animations === 0 && animating_shard + 1 < getNumShards(tensorShape, shardShape)) {
+        animating_shard += 1;
+        animateCubes(cubes, tensorShape, shardShape, coreGrid, animating_shard);
+    }
+
     TWEEN.update();
     controls.update();
     renderer.render(scene, camera);
@@ -229,3 +290,21 @@ for (let idx = 0; idx < input_ids.length; idx++) {
     document.getElementById(input_ids[idx]).addEventListener('change', reloadParams);
 }
 document.getElementById('reset_button').addEventListener('click', reloadParams);
+
+document.getElementById('pause_button').addEventListener('click', () => {
+    setPaused(!is_paused);
+});
+document.getElementById('next_button').addEventListener('click', () => {
+    setPaused(true);
+    if (pending_animations === 0 && animating_shard + 1 < getNumShards(tensorShape, shardShape)) {
+        animating_shard += 1;
+    }
+    resetPositions(cubes, tensorShape, shardShape, coreGrid, animating_shard);
+});
+document.getElementById('prev_button').addEventListener('click', () => {
+    setPaused(true);
+    if (animating_shard >= 0) {
+        animating_shard -= 1;
+    }
+    resetPositions(cubes, tensorShape, shardShape, coreGrid, animating_shard);
+});

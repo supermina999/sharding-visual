@@ -103,22 +103,27 @@ function getCubePosition(tensorShape, x, y, z) {
     );
 }
 
-const coreWidth = 40;
-const coreHeight = 30;
 const coreDepth = 1;
 const corePadding = 5;
-const corePaddedWidth = coreWidth + corePadding;
-const corePaddedHeight = coreHeight + corePadding;
+function getCoreSize() {
+    const shard2D = shardShapeTo2D();
+    const coreWidth = shard2D[1] * cubePaddedSize * 1.5;
+    const coreHeight = shard2D[0] * cubePaddedSize * 1.5;
+    return [coreWidth, coreHeight];
+}
+
 function getCorePosition(x, y) {
+    const coreSize = getCoreSize();
     return new THREE.Vector3(
-        (x - coreGrid[0] / 2 + 0.5) * corePaddedWidth,
-        (coreGrid[1] / 2 - y - 0.5) * corePaddedHeight,
-        (-tensorShape[2] / 2 - 3.5) * cubePaddedSize,
+        (x - coreGrid[0] / 2 + 0.5) * (coreSize[0] + corePadding),
+        (coreGrid[1] / 2 - y - 0.5) * (coreSize[1] + corePadding),
+        -(Math.ceil(getNumShards() / (coreGrid[0] * coreGrid[1])) + 2) * 1.5 * cubePaddedSize,
     );
 }
 
 function createCoreGrid() {
-    const coreGeometry = new THREE.BoxGeometry(coreWidth, coreHeight, coreDepth);
+    const coreSize = getCoreSize();
+    const coreGeometry = new THREE.BoxGeometry(coreSize[0], coreSize[1], coreDepth);
     const material = new THREE.MeshStandardMaterial({color: 0xfcfcfc});
     for (let x = 0; x < coreGrid[0]; x++) {
         for (let y = 0; y < coreGrid[1]; y++) {
